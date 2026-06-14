@@ -21,4 +21,4 @@ This project is built using n8n workflow and Python chatbot.
 API keys are stored safely using .env file (not uploaded)
 
 ## 👨‍💻 Author
-Your Name
+Kavuru Venkata Sahasra Srinidhi Avanthi
