@@ -1,0 +1,239 @@
+{
+  "name": "Research Paper Q&A Assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "1lE53oGn2kNpVpu4VYOUsw3mKEJTWZeqZ",
+          "mode": "list",
+          "cachedResultName": "healthcare_ai.txt",
+          "cachedResultUrl": "https://drive.google.com/file/d/1lE53oGn2kNpVpu4VYOUsw3mKEJTWZeqZ/view?usp=drivesdk"
+        },
+        "options": {
+          "binaryPropertyName": "data"
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        320,
+        -80
+      ],
+      "id": "be207ba2-65c1-42ba-9ace-dead5cfdd067",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "fAbYrt0B9HiXavTW",
+          "name": "Google Drive OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $input.first().json.data;\n\nconst chunkSize = 500;\nconst chunks = [];\n\nfor (let i = 0; i < text.length; i += chunkSize) {\n  chunks.push({\n    json: {\n      text: text.slice(i, i + chunkSize),\n      index: chunks.length\n    }\n  });\n}\n\nreturn chunks;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        736,
+        -80
+      ],
+      "id": "baf07d6a-3dda-4114-89f8-8aa5f665f1d3",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        944,
+        -80
+      ],
+      "id": "d017c0aa-b379-45f6-b65c-5e4f75f5ced8",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "jsCode": "const webhookData = $('Webhook').first().json;\nconst question = webhookData.body ? webhookData.body.question : webhookData.question;\nconst text = $input.first().json.text;\n\n// Aggressively clean the text\nconst cleanText = text\n  .replace(/[\\r\\n\\t]/g, ' ')\n  .replace(/\"/g, \"'\")\n  .replace(/\\\\/g, ' ')\n  .replace(/[\\x00-\\x1F\\x7F]/g, ' ')\n  .replace(/\\s+/g, ' ')\n  .substring(0, 400)\n  .trim();\n\nconst cleanQuestion = question\n  .replace(/\"/g, \"'\")\n  .replace(/[\\x00-\\x1F\\x7F]/g, ' ')\n  .trim();\n\nreturn [{\n  json: {\n    question: cleanQuestion,\n    cleanText: cleanText,\n    userMessage: \"Answer this: \" + cleanQuestion + \" Text: \" + cleanText\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        -80
+      ],
+      "id": "996fb3a7-a97f-4cef-b2ee-70f1145f18fb",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"llama-3.3-70b-versatile\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"={{ $json.userMessage }}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1408,
+        -80
+      ],
+      "id": "8e309cd3-a030-4369-bf90-c88114c80fa8",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "research-qa",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        32,
+        -80
+      ],
+      "id": "2a3d2167-4b71-43ad-a25a-101cb35940e2",
+      "name": "Webhook",
+      "webhookId": "978edcab-c696-462a-9fe5-ec5df4d2a92b"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=={{ $json.choices[0].message.content }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1616,
+        -80
+      ],
+      "id": "aa447fc5-b7d5-4df6-9ae1-cebf3e84c4d6",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        528,
+        -80
+      ],
+      "id": "b8142dab-d869-4714-84ee-ec98cf276508",
+      "name": "Extract from File"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },  
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "b41d6767-e4e6-45a8-988b-a0e9a60d47f9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8942847e16425a3214685b2ff08520021b6fe4b4a0ed63161b653d49859f8f3e"
+  },
+  "id": "zlHBl2lGCzPcMSEx",
+  "tags": []
+}
