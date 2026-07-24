@@ -1,3 +1,4 @@
 streamlit
 groq
 speechrecognition
+streamlit-mic-recorder
