@@ -44,7 +44,7 @@ Generates a complete travel guide including:
 * Booking system integration
 * Multi-language support
 * Mobile app version
-
+ 
 ## 🙌 Author
 
-Developed by K.V.S.Srinidhi Avanthi
+Developed by Kavuru Venkata Sahasra Srinidhi Avanthi
