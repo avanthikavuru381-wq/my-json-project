@@ -9,7 +9,7 @@ import streamlit.components.v1 as components # For embedding live maps
 from streamlit_mic_recorder import speech_to_text
 
 # SECURE YOUR API KEY: Deactivate this key in Groq and use st.secrets instead!
-client = Groq(api_key="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")
+client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 
 def set_background():
     # A calm, peaceful light sea-blue beach horizon background
